@@ -1,0 +1,31 @@
+{
+  "name": "HumanizeAI",
+  "version": "1.0",
+  "manifest_version": 3,
+  "permissions": [
+    "tabs",
+    "scripting",
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.humanizeai.pro/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "HumanizeAI"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "app/*"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "options_page": "app/index.html"
+}

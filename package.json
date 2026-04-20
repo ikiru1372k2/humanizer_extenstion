@@ -1,0 +1,12 @@
+{
+  "name": "humanizeai-tester",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "test:site": "node scripts/test-humanizeai.js"
+  },
+  "dependencies": {
+    "playwright": "^1.54.2"
+  }
+}

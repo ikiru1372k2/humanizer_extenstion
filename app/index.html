@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HumanizeAI</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="app-title-wrap">
+        <h1 class="app-title">HumanizeAI</h1>
+        <p class="app-subtitle">Chunk, send, stream.</p>
+      </div>
+      <button id="open-full-page-btn" class="secondary-btn header-btn" type="button">Open Full Page</button>
+    </header>
+
+    <main class="panels">
+      <section class="panel left-panel">
+        <div class="panel-label-row">
+          <span class="panel-label">AI-Generated Text</span>
+          <span id="input-word-count" class="word-count">0 words</span>
+        </div>
+
+        <textarea id="input-area" placeholder="Paste up to 30,000 words here." spellcheck="false"></textarea>
+
+        <div class="panel-footer panel-footer-top">
+          <div class="mode-selector" role="group" aria-label="Humanize mode">
+            <button class="mode-btn" type="button" data-mode="basic">Basic</button>
+            <button class="mode-btn active" type="button" data-mode="standard">Standard</button>
+            <button class="mode-btn" type="button" data-mode="deep">Deep</button>
+          </div>
+          <button id="clear-btn" class="secondary-btn" type="button">Clear</button>
+        </div>
+
+        <div class="panel-footer panel-footer-bottom">
+          <button id="humanize-btn" type="button" disabled>Humanize</button>
+          <span id="status-text" class="status-text">Ready.</span>
+        </div>
+      </section>
+
+      <div class="divider" aria-hidden="true"></div>
+
+      <section class="panel right-panel">
+        <div class="panel-label-row">
+          <span class="panel-label">Humanized Output</span>
+          <span id="output-word-count" class="word-count">0 words</span>
+        </div>
+
+        <div id="warning-banner" class="warning-banner" hidden>
+          <span id="warning-text"></span>
+          <div class="warning-actions">
+            <button id="verify-btn" class="secondary-btn" type="button" hidden>Open Verification Tab</button>
+          </div>
+        </div>
+        <div id="output-area" aria-live="polite"></div>
+
+        <div id="progress-shell" class="progress-shell" hidden>
+          <div id="progress-bar" class="progress-bar">
+            <div id="progress-fill" class="progress-fill"></div>
+          </div>
+          <div id="progress-text" class="progress-text">Starting.</div>
+        </div>
+
+        <div class="panel-footer panel-footer-bottom">
+          <button id="copy-btn" class="secondary-btn" type="button">Copy All</button>
+          <button id="download-btn" class="secondary-btn" type="button">Download .txt</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
