@@ -99,6 +99,9 @@ async function processChunk(message) {
 
   try {
     const resultText = await pollForResult(outputEl, snapshotBefore);
+    console.log("[HumanizeAI] output element:", outputEl && outputEl.tagName, outputEl && outputEl.id, outputEl && outputEl.className);
+    console.log("[HumanizeAI] resultText (first 200):", resultText.slice(0, 200));
+    console.log("[HumanizeAI] resultText length:", resultText.length);
     safelySendRuntimeMessage({
       action: "CHUNK_RESULT",
       requestId,
