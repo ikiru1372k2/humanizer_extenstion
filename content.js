@@ -56,12 +56,102 @@ if (!window.__humanizrInjected) {
       })
   };
 
+  installNetworkInterceptor();
+
   chrome.runtime.onMessage.addListener((message) => {
     if (!message || message.action !== "INJECT_CHUNK") {
       return;
     }
 
     window.__humanizeAIBridge.processChunk(message);
+  });
+}
+
+function installNetworkInterceptor() {
+  const script = document.createElement("script");
+  script.textContent = `
+    (function () {
+      if (window.__humanizrNetHook) return;
+      window.__humanizrNetHook = true;
+      window.__humanizrLastApiText = "";
+      window.__humanizrLastApiAt = 0;
+
+      function extractHumanizedText(payload) {
+        if (payload == null) return "";
+        if (typeof payload === "string") {
+          const trimmed = payload.trim();
+          if (!trimmed) return "";
+          if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+            try { return extractHumanizedText(JSON.parse(trimmed)); } catch (e) {}
+          }
+          return trimmed;
+        }
+        if (typeof payload !== "object") return "";
+        const keys = ["output", "result", "humanized", "paraphrased", "text", "data", "content", "rewrite", "rewritten"];
+        for (const k of keys) {
+          if (typeof payload[k] === "string" && payload[k].trim()) return payload[k].trim();
+        }
+        for (const k of keys) {
+          if (payload[k] && typeof payload[k] === "object") {
+            const nested = extractHumanizedText(payload[k]);
+            if (nested) return nested;
+          }
+        }
+        return "";
+      }
+
+      function record(text, url) {
+        if (!text || text.length < 20) return;
+        window.__humanizrLastApiText = text;
+        window.__humanizrLastApiAt = Date.now();
+        window.postMessage({ source: "humanizr-net", text: text, url: String(url || "") }, "*");
+      }
+
+      const origFetch = window.fetch;
+      window.fetch = function (input, init) {
+        const url = (typeof input === "string") ? input : (input && input.url) || "";
+        return origFetch.apply(this, arguments).then((response) => {
+          try {
+            const clone = response.clone();
+            clone.text().then((body) => {
+              const text = extractHumanizedText(body);
+              if (text) record(text, url);
+            }).catch(() => {});
+          } catch (e) {}
+          return response;
+        });
+      };
+
+      const OrigXHR = window.XMLHttpRequest;
+      function PatchedXHR() {
+        const xhr = new OrigXHR();
+        let xhrUrl = "";
+        const origOpen = xhr.open;
+        xhr.open = function (method, url) {
+          xhrUrl = url;
+          return origOpen.apply(this, arguments);
+        };
+        xhr.addEventListener("load", function () {
+          try {
+            const text = extractHumanizedText(xhr.responseText);
+            if (text) record(text, xhrUrl);
+          } catch (e) {}
+        });
+        return xhr;
+      }
+      PatchedXHR.prototype = OrigXHR.prototype;
+      window.XMLHttpRequest = PatchedXHR;
+    })();
+  `;
+  (document.head || document.documentElement).appendChild(script);
+  script.remove();
+
+  window.addEventListener("message", (event) => {
+    if (event.source !== window) return;
+    const data = event.data;
+    if (!data || data.source !== "humanizr-net" || typeof data.text !== "string") return;
+    window.__humanizrLastApiText = data.text;
+    window.__humanizrLastApiAt = Date.now();
   });
 }
 
@@ -282,9 +372,18 @@ function normalizeText(text) {
 function pollForResult(outputEl, snapshotBefore) {
   return new Promise((resolve, reject) => {
     const startedAt = Date.now();
+    const apiSnapshotAt = window.__humanizrLastApiAt || 0;
     let dynamicOutput = outputEl;
 
     const timer = setInterval(() => {
+      const apiAt = window.__humanizrLastApiAt || 0;
+      const apiText = window.__humanizrLastApiText || "";
+      if (apiAt > apiSnapshotAt && apiText && apiText.length > 10) {
+        clearInterval(timer);
+        resolve(apiText);
+        return;
+      }
+
       if (!dynamicOutput || !document.contains(dynamicOutput)) {
         dynamicOutput = findOutputElement(findTextareaSync());
       }
