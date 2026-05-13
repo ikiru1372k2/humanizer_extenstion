@@ -1,14 +1,12 @@
-const INPUT_SELECTOR = 'textarea, [contenteditable="true"], [role="textbox"]';
+const INPUT_SELECTOR = 'textarea[aria-label*="Input" i], textarea[class*="EditableInput_textArea"], textarea[placeholder*="Paste" i]';
 const BTN_SELECTOR = 'button[type="button"], button';
-const OUTPUT_SELECTOR = 'textarea, [contenteditable="true"], [role="textbox"], [class*="output"], [class*="result"], [data-testid*="output"], #output';
+const OUTPUT_SELECTOR = 'textarea#rich-textarea, textarea[aria-label*="Output" i], textarea[class*="EditableOutput_textArea"]';
 
 const INPUT_FALLBACKS = [
-  '[placeholder*="Paste"]',
-  '[aria-label*="Paste"]',
-  'main textarea',
-  '[contenteditable="true"]',
-  '[role="textbox"]',
-  'textarea'
+  'textarea[aria-label*="Input" i]',
+  'textarea[class*="EditableInput_textArea"]',
+  'textarea[placeholder*="Paste" i]',
+  '[aria-label*="Paste" i]'
 ];
 
 const BUTTON_FALLBACKS = [
@@ -19,12 +17,9 @@ const BUTTON_FALLBACKS = [
 ];
 
 const OUTPUT_FALLBACKS = [
-  '[class*="output"]',
-  '[class*="result"]',
-  '[class*="paraphrase"]',
-  '[data-testid*="output"]',
-  '#output',
-  'main div'
+  'textarea#rich-textarea',
+  'textarea[aria-label*="Output" i]',
+  'textarea[class*="EditableOutput_textArea"]'
 ];
 
 const CAPTCHA_FALLBACKS = [
@@ -211,37 +206,17 @@ function findOutputElement(inputTextarea) {
     return direct;
   }
 
+  for (const selector of OUTPUT_FALLBACKS) {
+    const match = document.querySelector(selector);
+    if (match && match !== inputTextarea) {
+      return match;
+    }
+  }
+
   const secondTextarea = Array.from(document.querySelectorAll("textarea")).find((textarea) => textarea !== inputTextarea);
 
   if (secondTextarea) {
     return secondTextarea;
-  }
-
-  const placeholderMatch = Array.from(document.querySelectorAll("div, p, span")).find((el) => {
-    const text = normalizeText(el.textContent);
-    return text.includes("paraphrased text will appear here");
-  });
-
-  if (placeholderMatch && placeholderMatch.parentElement) {
-    return placeholderMatch.parentElement;
-  }
-
-  for (const selector of OUTPUT_FALLBACKS) {
-    const candidates = Array.from(document.querySelectorAll(selector)).filter((el) => {
-      if (!(el instanceof HTMLElement)) {
-        return false;
-      }
-
-      if (inputTextarea && el.contains(inputTextarea)) {
-        return false;
-      }
-
-      return readOutputText(el).length > 0 || el.clientHeight > 80;
-    });
-
-    if (candidates.length > 0) {
-      return candidates[candidates.length - 1];
-    }
   }
 
   return null;
@@ -252,11 +227,11 @@ function readOutputText(element) {
     return "";
   }
 
-  if ("value" in element && typeof element.value === "string") {
-    return element.value.trim();
+  if (element instanceof HTMLTextAreaElement || element instanceof HTMLInputElement) {
+    return (element.value || "").trim();
   }
 
-  return (element.innerText || element.textContent || "").trim();
+  return "";
 }
 
 function isHumanizeButton(button) {
