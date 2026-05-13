@@ -63,8 +63,11 @@ async function dismissCookieBanner(page) {
 
 async function findInput(page) {
   const candidates = [
-    page.locator("textarea").first(),
+    page.getByLabel(/input textarea/i),
+    page.locator('textarea[aria-label*="input"]'),
+    page.locator('textarea[class*="EditableInput_textArea"]'),
     page.getByPlaceholder(/paste your text here/i),
+    page.locator("textarea").first(),
     page.locator('[contenteditable="true"]').first()
   ];
 
@@ -113,10 +116,13 @@ async function findHumanizeButton(page) {
 
 async function readOutput(page) {
   const outputCandidates = [
-    page.locator("textarea").nth(1),
+    page.locator('textarea[rich-textarea]'),
+    page.getByLabel(/output textarea/i),
+    page.locator('textarea[class*="EditableOutput_textArea"]'),
     page.getByText(/paraphrased text will appear here/i),
     page.locator('[class*="output"]').last(),
-    page.locator('[class*="result"]').last()
+    page.locator('[class*="result"]').last(),
+    page.locator("textarea").nth(1)
   ];
 
   for (const candidate of outputCandidates) {
