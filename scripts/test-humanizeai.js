@@ -64,10 +64,9 @@ async function dismissCookieBanner(page) {
 async function findInput(page) {
   const candidates = [
     page.getByLabel(/input textarea/i),
-    page.locator('textarea[aria-label*="input"]'),
+    page.locator('textarea[aria-label*="Input" i]'),
     page.locator('textarea[class*="EditableInput_textArea"]'),
     page.getByPlaceholder(/paste your text here/i),
-    page.locator("textarea").first(),
     page.locator('[contenteditable="true"]').first()
   ];
 
@@ -114,41 +113,26 @@ async function findHumanizeButton(page) {
   throw new Error("Could not find the Humanize button");
 }
 
-async function readOutput(page) {
-  const outputCandidates = [
-    page.locator('textarea[rich-textarea]'),
+async function findOutput(page) {
+  const candidates = [
+    page.locator('textarea#rich-textarea'),
     page.getByLabel(/output textarea/i),
-    page.locator('textarea[class*="EditableOutput_textArea"]'),
-    page.getByText(/paraphrased text will appear here/i),
-    page.locator('[class*="output"]').last(),
-    page.locator('[class*="result"]').last(),
-    page.locator("textarea").nth(1)
+    page.locator('textarea[class*="EditableOutput_textArea"]')
   ];
 
-  for (const candidate of outputCandidates) {
-    const count = await candidate.count().catch(() => 0);
-    if (count === 0) {
-      continue;
-    }
-
-    const item = candidate.first ? candidate.first() : candidate;
-    const visible = await item.isVisible().catch(() => false);
-    if (!visible) {
-      continue;
-    }
-
-    const value = await item.inputValue().catch(() => "");
-    if (value && value.trim()) {
-      return value.trim();
-    }
-
-    const text = ((await item.textContent().catch(() => "")) || "").trim();
-    if (text) {
-      return text;
+  for (const candidate of candidates) {
+    if ((await candidate.count().catch(() => 0)) > 0) {
+      return candidate.first();
     }
   }
 
-  return "";
+  throw new Error("Could not find the output textarea on humanizeai.pro");
+}
+
+async function readOutput(page) {
+  const output = await findOutput(page);
+  const value = await output.inputValue().catch(() => "");
+  return (value || "").trim();
 }
 
 async function waitForResult(page, snapshotBefore) {
